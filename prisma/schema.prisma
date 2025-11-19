@@ -28,3 +28,19 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Card {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id             Int      @id @default(autoincrement())
+  name           String
+  init_amount    Float
+  current_amount Float
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
