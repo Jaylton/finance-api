@@ -38,7 +38,7 @@ export class CreateTransferDto {
   amount: number;
 
   @IsArray()
-  @IsNotEmpty()
+  @IsOptional()
   @IsInt({ each: true })
   categories?: number[];
 }

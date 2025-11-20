@@ -11,6 +11,11 @@ export class TransfersController {
     findAll(@Query() query: FindAllTransfersDto) {
         return this.transfersService.findAll(query);
     }
+    
+    @Get('graphic')
+    graphic(@Query() query: FindAllTransfersDto) {
+        return this.transfersService.graphic(query);
+    }
 
     @Post()
     create(@Body() createTransferDto: CreateTransferDto) {
