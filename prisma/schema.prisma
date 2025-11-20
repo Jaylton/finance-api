@@ -23,24 +23,51 @@ model User {
 }
 
 model Category {
-  id        Int      @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  transfer  Transfer[]
 }
 
 model Card {
-  id        Int      @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  transfers Transfer[]
 }
 
 model Account {
-  id             Int      @id @default(autoincrement())
+  id             Int        @id @default(autoincrement())
   name           String
   init_amount    Float
   current_amount Float
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  transfers      Transfer[]
+}
+
+enum TransferType {
+  EXPENSE
+  INCOME
+  INVESTMENT
+}
+
+model Transfer {
+  id          Int          @id @default(autoincrement())
+  account     Account?     @relation(fields: [accountId], references: [id])
+  accountId   Int?
+  card        Card?        @relation(fields: [cardId], references: [id])
+  cardId      Int?
+  name        String
+  date        DateTime
+  type        TransferType
+  installment Int?
+  monthly     Boolean      @default(false)
+  description String?
+  amount      Float
+  categories  Category[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }

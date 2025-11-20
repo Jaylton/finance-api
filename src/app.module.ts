@@ -8,10 +8,12 @@ import { PrismaModule } from './prisma/prisma.module';
 import { CardsModule } from './modules/cards/cards.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { TransfersService } from './modules/transfers/transfers.service';
+import { TransfersModule } from './modules/transfers/transfers.module';
 
 @Module({
-  imports: [UsersModule, CategoriesModule, CardsModule, AccountsModule, PrismaModule, AuthModule],
+  imports: [UsersModule, CategoriesModule, CardsModule, AccountsModule, PrismaModule, AuthModule, TransfersModule],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, TransfersService],
 })
 export class AppModule {}
