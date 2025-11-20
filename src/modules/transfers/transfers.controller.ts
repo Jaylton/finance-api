@@ -1,20 +1,31 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { TransfersService } from './transfers.service';
 import { FindAllTransfersDto } from './dto/find-all-transfer.dto';
 import { CreateTransferDto } from './dto/create-transfer.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('transfers')
 export class TransfersController {
-    constructor(private readonly transfersService: TransfersService) {}
+    constructor(private readonly transfersService: TransfersService) { }
 
     @Get()
     findAll(@Query() query: FindAllTransfersDto) {
         return this.transfersService.findAll(query);
     }
-    
+
     @Get('graphic')
     graphic(@Query() query: FindAllTransfersDto) {
         return this.transfersService.graphic(query);
+    }
+
+    @Post('import-csv')
+    @UseInterceptors(FileInterceptor('file'))
+    importCsv(
+        @UploadedFile() file: Express.Multer.File,
+        @Body('accountId') accountId?: number,
+        @Body('cardId') cardId?: number
+    ) {
+        return this.transfersService.importCsv(file.buffer, accountId, cardId);
     }
 
     @Post()

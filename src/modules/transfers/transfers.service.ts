@@ -3,7 +3,9 @@ import { FindAllTransfersDto } from './dto/find-all-transfer.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTransferDto } from './dto/create-transfer.dto';
 import { Prisma } from '@prisma/client';
-import { convertBigInt } from '../../commons/utils';
+import { convertBigInt, parseDate } from '../../commons/utils';
+import csvParser from 'csv-parser';
+import { Readable } from 'stream';
 
 @Injectable()
 export class TransfersService {
@@ -57,6 +59,29 @@ export class TransfersService {
             },
         });
         return transfers;
+    }
+
+    async findLastByName(name: string) {
+        const transfers = await this.prisma.transfer.findMany({
+            where: {
+                name: {
+                    contains: name,
+                },
+                categories: {
+                    some: {},
+                },
+            },
+            include: {
+                categories: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+            },
+            orderBy: { id: 'desc' },
+        });
+        return transfers.length > 0 ? transfers[0] : null;
     }
 
     async graphic(query: FindAllTransfersDto) {
@@ -129,6 +154,21 @@ export class TransfersService {
     }
 
     async create(transferData: CreateTransferDto) {
+        // verifica se já existe uma transferência igual
+        const exist = await this.prisma.transfer.findFirst({
+            where: {
+                name: transferData.name,
+                date: new Date(transferData.date + "T00:00:00.000Z"),
+                amount: transferData.amount,
+                accountId: transferData.accountId,
+                cardId: transferData.cardId,
+            },
+        });
+
+        if (exist) {
+            return exist;
+        }
+
         return this.prisma.transfer.create({
             data: {
                 name: transferData.name,
@@ -189,5 +229,84 @@ export class TransfersService {
         return this.prisma.transfer.delete({
             where: { id },
         });
+    }
+
+    /**
+     * Importa transferências a partir de um arquivo CSV.
+     * Valida e trata dados, retorna detalhes de sucesso e erro por linha.
+     */
+    async importCsv(fileBuffer: Buffer, accountId?: number, cardId?: number) {
+        type CsvRow = { date: string; description: string; amount: string | number };
+        type ImportResult = { id?: number; line: number; success: boolean; error?: string };
+
+        const results: CsvRow[] = [];
+        const stream = Readable.from(fileBuffer);
+
+        // Extrair os dados do CSV
+        const data: CsvRow[] = await new Promise((resolve, reject) => {
+            stream
+                .pipe(csvParser())
+                .on('data', (row) => {
+                    results.push(row);
+                })
+                .on('end', () => resolve(results))
+                .on('error', (err) => reject(err));
+        });
+
+        const response: ImportResult[] = [];
+
+        for (let i = 0; i < data.length; i++) {
+            const element = data[i];
+            try {
+                // Validação básica dos campos
+                if (!element.date || !element.description || element.amount === undefined || element.amount === null) {
+                    response.push({ line: i + 1, success: false, error: 'Campos obrigatórios ausentes' });
+                    continue;
+                }
+
+                const parsedDate = parseDate(element.date);
+                if (!parsedDate) {
+                    response.push({ line: i + 1, success: false, error: 'Data inválida' });
+                    continue;
+                }
+
+                const amount = typeof element.amount === 'string' ? Number(element.amount.replace(',', '.')) : Number(element.amount);
+                if (isNaN(amount)) {
+                    response.push({ line: i + 1, success: false, error: 'Valor inválido' });
+                    continue;
+                }
+
+                // Busca categorias por similaridade, se houver descrição
+                let categories: number[] | undefined = undefined;
+                if (element.description) {
+                    try {
+                        const lastTransfer = await this.findLastByName(element.description);
+                        if (lastTransfer && lastTransfer.categories) {
+                            categories = lastTransfer.categories.map((cat: any) => cat.id);
+                        }
+                    } catch (e) {
+                        // ignora erro de busca de categoria
+                    }
+                }
+
+                const transfer: CreateTransferDto = {
+                    date: parsedDate,
+                    name: element.description,
+                    amount,
+                    description: `Importado do csv; ${element.description}`,
+                    type: amount >= 0 ? 'INCOME' : 'EXPENSE',
+                    ...(accountId ? { accountId: Number(accountId) } : {}),
+                    ...(cardId ? { cardId: Number(cardId) } : {}),
+                    ...(categories ? { categories } : {}),
+                };
+
+                const createdTransfer = await this.create(transfer);
+                response.push({ id: createdTransfer.id, line: i + 1, success: true });
+            } catch (err: any) {
+                response.push({ line: i + 1, success: false, error: err?.message || 'Erro desconhecido' });
+            }
+        }
+
+        return { results: response };
     }
 }
