@@ -1,0 +1,54 @@
+name: CI/CD com Testes E2E
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      # 1. Define o serviço MySQL
+      mysql:
+        image: mysql:8.0 # Use a mesma versão do seu ambiente de dev/produção
+        env:
+          # Define credenciais e nome do banco de dados de teste
+          MYSQL_ROOT_PASSWORD: password 
+          MYSQL_DATABASE: finance_api_test
+        ports:
+          # Mapeia a porta do container para a máquina host
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping" 
+          --health-interval=10s 
+          --health-timeout=5s 
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 2. Configuração do Banco de Dados de Teste
+      - name: Instalar dependências e Prisma CLI
+        run: npm install
+
+      - name: Configurar .env.test com a URL do Serviço
+        run: |
+          echo "DATABASE_URL=mysql://root:password@127.0.0.1:3306/${{ services.mysql.id }}" >> .env.test
+          # Nota: O host é 127.0.0.1 ou 'mysql' dependendo da versão do runner. 
+          # Usaremos a URL mapeada pelo serviço.
+
+      - name: Esperar pelo serviço MySQL e aplicar migrations
+        run: |
+          # O comando 'db push' é o mais rápido para CI/CD
+          npx dotenv -e .env.test -- prisma db push
+          
+      # 3. Executar os Testes E2E
+      - name: Executar Testes E2E
+        run: npm run test:e2e
+        env:
+          NODE_ENV: test
+          # Garanta que o Jest-e2e.json use as variáveis de ambiente

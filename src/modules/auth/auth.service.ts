@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -15,7 +15,7 @@ export class AuthService {
         if (user && (await bcrypt.compare(password, user.password))) {
             return await this.login(user);
         }
-        return null;
+        throw new UnauthorizedException('Invalid credentials');
     }
 
     async login(user: User) {
