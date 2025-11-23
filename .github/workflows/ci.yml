@@ -29,22 +29,21 @@ jobs:
         with:
           node-version: 20
 
-      - name: Instalar dependências
-        run: npm install
+      - run: npm install
 
       - name: Configurar .env.test
         run: |
-          echo "DATABASE_URL=mysql://root:password@mysql:3306/finance_api_test" > .env.test
+          echo "DATABASE_URL=mysql://root:password@127.0.0.1:3306/finance_api_test" > .env.test
 
       - name: Instalar cliente MySQL
         run: sudo apt-get install -y mysql-client
 
-      - name: Esperar MySQL estar pronto
+      - name: Esperar MySQL ficar pronto
         run: |
-          echo "🕒 Aguardando MySQL iniciar..."
+          echo "🕒 Aguardando MySQL..."
           for i in {1..30}; do
-            mysqladmin ping -h mysql -u root -ppassword --silent && break
-            echo "Tentativa $i... ainda iniciando..."
+            mysqladmin ping -h127.0.0.1 -P3306 -u root -ppassword --silent && break
+            echo "Tentativa $i... MySQL ainda não está pronto."
             sleep 2
           done
           echo "✅ MySQL está pronto!"
