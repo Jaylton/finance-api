@@ -65,6 +65,33 @@ API RESTful para gestão financeira pessoal, desenvolvida em NestJS e Prisma, co
 3. Rode as migrations: `npx prisma migrate dev`
 4. Inicie a API: `npm run start:dev`
 
+## Testes E2E
+
+Para rodar os testes E2E, siga os passos abaixo:
+
+1. **Crie um banco de dados separado para testes** (exemplo: `finance_api_test`).
+2. **Configure o arquivo `.env.test`** na raiz do projeto com a variável `DATABASE_URL` apontando para o banco de testes:
+	```env
+	DATABASE_URL="mysql://usuario:senha@localhost:3306/finance_api_test"
+	```
+3. **Rode as migrations no banco de testes:**
+	```sh
+	prisma:test:deploy
+	```
+	Ou, para ambiente local:
+	```sh
+	prisma:test:reset
+	```
+4. **Execute os testes E2E:**
+	```sh
+	npm run test:e2e
+	```
+
+### Comandos úteis para testes
+- `npm run test:e2e` — Executa todos os testes E2E localizados na pasta `/test`
+
+> **Importante:** Os testes E2E apagam dados das tabelas de teste antes de rodar cada suíte. Nunca use o banco de produção para testes!
+
 ## Observações
 - Algumas rotas exigem autenticação JWT (verifique o uso do `@UseGuards(JwtAuthGuard)` nos controllers)
 - O projeto suporta importação de transferências via CSV, facilitando a migração de dados de outros sistemas
