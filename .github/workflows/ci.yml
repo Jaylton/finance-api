@@ -7,7 +7,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     services:
       mysql:
         image: mysql:8.0
@@ -20,7 +20,7 @@ jobs:
           --health-cmd="mysqladmin ping -ppassword"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=10
 
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +35,19 @@ jobs:
       - name: Configurar .env.test
         run: |
           echo "DATABASE_URL=mysql://root:password@mysql:3306/finance_api_test" > .env.test
+
+      - name: Instalar cliente MySQL
+        run: sudo apt-get install -y mysql-client
+
+      - name: Esperar MySQL estar pronto
+        run: |
+          echo "🕒 Aguardando MySQL iniciar..."
+          for i in {1..30}; do
+            mysqladmin ping -h mysql -u root -ppassword --silent && break
+            echo "Tentativa $i... ainda iniciando..."
+            sleep 2
+          done
+          echo "✅ MySQL está pronto!"
 
       - name: Aplicar schema ao banco de teste
         run: |
