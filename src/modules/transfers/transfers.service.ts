@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { FindAllTransfersDto } from './dto/find-all-transfer.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTransferDto } from './dto/create-transfer.dto';
@@ -154,6 +154,23 @@ export class TransfersService {
     }
 
     async create(transferData: CreateTransferDto) {
+        if (transferData.cardId) {
+            const card = await this.prisma.card.findUnique({
+                where: { id: transferData.cardId },
+            });
+            if (!card) {
+                throw new NotFoundException(`Card with id ${transferData.cardId} not found`);
+            }
+        }
+        if (transferData.accountId) {
+            const account = await this.prisma.account.findUnique({
+                where: { id: transferData.accountId },
+            });
+            if (!account) {
+                throw new NotFoundException(`Account with id ${transferData.accountId} not found`);
+            }
+        }
+
         // verifica se já existe uma transferência igual
         const exist = await this.prisma.transfer.findFirst({
             where: {
