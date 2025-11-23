@@ -14,7 +14,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         const response = ctx.getResponse();
 
         let status = HttpStatus.INTERNAL_SERVER_ERROR;
-        let message = 'Internal server error';
+        let message = exception.message || 'Internal server error';
 
         // NestJs HttpException (lançadas por você)
         if (exception instanceof HttpException) {

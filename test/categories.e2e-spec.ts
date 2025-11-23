@@ -9,10 +9,10 @@ import { GlobalExceptionFilter } from 'src/commons/filters/http-exception.filter
 import helmet from 'helmet';
 import { createUserAndLogin } from './helpers/auth.helper';
 
-describe('Accounts E2E', () => {
+describe('Categories E2E', () => {
     let app: INestApplication;
     let prisma: PrismaService;
-    let accountId: number;
+    let categoryId: number;
     let token: string;
 
     beforeAll(async () => {
@@ -24,7 +24,7 @@ describe('Accounts E2E', () => {
         app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
         prisma = app.get(PrismaService);
         await prisma.$connect();
-        await prisma.account.deleteMany();
+        await prisma.category.deleteMany();
 
         app.useGlobalPipes(
             new ValidationPipe({
@@ -46,7 +46,9 @@ describe('Accounts E2E', () => {
         });
         await app.init();
 
-        ({ token } = await createUserAndLogin(app, prisma));
+        // Cria usuário e obtém token
+        const auth = await createUserAndLogin(app, prisma);
+        token = auth.token;
     });
 
     afterAll(async () => {
@@ -54,52 +56,50 @@ describe('Accounts E2E', () => {
         await app.close();
     });
 
-    it('/accounts (POST) - criar conta', async () => {
+    it('/categories (POST) - criar categoria', async () => {
         const res = await request(app.getHttpServer())
-            .post('/accounts')
+            .post('/categories')
             .set('Authorization', `Bearer ${token}`)
-            .send({ name: 'Conta Teste', init_amount: 100, current_amount: 100 })
+            .send({ name: 'Categoria Teste' })
             .expect(201);
-
         expect(res.body.data).toHaveProperty('id');
-        accountId = res.body.data.id;
+        categoryId = res.body.data.id;
     });
 
-    it('/accounts (GET) - listar contas', async () => {
+    it('/categories (GET) - listar categorias', async () => {
         const res = await request(app.getHttpServer())
-            .get('/accounts')
+            .get('/categories')
             .set('Authorization', `Bearer ${token}`)
             .expect(200);
         expect(Array.isArray(res.body.data)).toBe(true);
         expect(res.body.data.length).toBeGreaterThan(0);
     });
 
-    it('/accounts/:id (GET) - buscar conta por id', async () => {
+    it('/categories/:id (GET) - buscar categoria por id', async () => {
         const res = await request(app.getHttpServer())
-            .get(`/accounts/${accountId}`)
+            .get(`/categories/${categoryId}`)
             .set('Authorization', `Bearer ${token}`)
             .expect(200);
-        expect(res.body.data).toHaveProperty('id', accountId);
+        expect(res.body.data).toHaveProperty('id', categoryId);
     });
 
-    it('/accounts/:id (PATCH) - atualizar conta', async () => {
+    it('/categories/:id (PATCH) - atualizar categoria', async () => {
         const res = await request(app.getHttpServer())
-            .patch(`/accounts/${accountId}`)
+            .patch(`/categories/${categoryId}`)
             .set('Authorization', `Bearer ${token}`)
-            .send({ name: 'Conta Atualizada', current_amount: 200 })
+            .send({ name: 'Categoria Atualizada' })
             .expect(200);
-        expect(res.body.data).toHaveProperty('name', 'Conta Atualizada');
-        expect(res.body.data).toHaveProperty('current_amount', 200);
+        expect(res.body.data).toHaveProperty('name', 'Categoria Atualizada');
     });
 
-    it('/accounts/:id (DELETE) - remover conta', async () => {
+    it('/categories/:id (DELETE) - remover categoria', async () => {
         await request(app.getHttpServer())
-            .delete(`/accounts/${accountId}`)
+            .delete(`/categories/${categoryId}`)
             .set('Authorization', `Bearer ${token}`)
             .expect(200);
-        // Verifica se foi removido
+        // Verifica se foi removida
         await request(app.getHttpServer())
-            .get(`/accounts/${accountId}`)
+            .get(`/categories/${categoryId}`)
             .set('Authorization', `Bearer ${token}`)
             .expect(404);
     });

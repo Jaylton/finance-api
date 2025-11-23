@@ -46,8 +46,8 @@ export class TransfersController {
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard)
-    remove(@Param('id') id: number) {
-        return this.transfersService.remove(id);
+    async remove(@Param('id') id: number) {
+        return await this.transfersService.remove(id);
     }
 
 }

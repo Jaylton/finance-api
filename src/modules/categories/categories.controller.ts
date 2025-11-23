@@ -37,8 +37,8 @@ export class CategoriesController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  remove(@Param('id', ParseIntPipe) id: number) {
-    this.categoriesService.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    await this.categoriesService.remove(id);
     return { message: 'Categoria removida com sucesso' };
   }
 }

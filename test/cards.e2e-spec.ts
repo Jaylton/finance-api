@@ -3,19 +3,17 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
 import * as express from 'express';
 import { ResponseInterceptor } from 'src/commons/interceptors/response.interceptor';
 import { GlobalExceptionFilter } from 'src/commons/filters/http-exception.filter';
 import helmet from 'helmet';
-import { randomUUID } from 'crypto';
+import { createUserAndLogin } from './helpers/auth.helper';
 
 describe('Cards E2E', () => {
     let app: INestApplication;
     let prisma: PrismaService;
     let cardId: number;
     let token: string;
-    let email: string = randomUUID() + '@test.com';
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -48,15 +46,7 @@ describe('Cards E2E', () => {
         });
         await app.init();
 
-        await prisma.user.create({
-            data: { name: 'Test User', email: email, password: await bcrypt.hash('testpass', 10) },
-        });
-
-        // Faça login para obter o token
-        const res = await request(app.getHttpServer())
-            .post('/auth/login')
-            .send({ email: email, password: 'testpass' });
-        token = res.body.data
+        ({ token } = await createUserAndLogin(app, prisma));
     });
 
     afterAll(async () => {

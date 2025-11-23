@@ -12,9 +12,13 @@ export class FindAllTransfersDto {
     type?: 'INCOME' | 'EXPENSE' | 'TRANSFER';
 
     @IsOptional()
+    @IsInt()
+    @Type(() => Number)
     accountId?: number;
 
     @IsOptional()
+    @IsInt()
+    @Type(() => Number)
     cardId?: number;
 
     @IsOptional()
