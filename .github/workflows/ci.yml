@@ -40,13 +40,13 @@ jobs:
 
       - name: Esperar MySQL ficar pronto
         run: |
-          echo "🕒 Aguardando MySQL..."
+          echo "Aguardando MySQL..."
           for i in {1..30}; do
             mysqladmin ping -h127.0.0.1 -P3306 -u root -ppassword --silent && break
             echo "Tentativa $i... MySQL ainda não está pronto."
             sleep 2
           done
-          echo "✅ MySQL está pronto!"
+          echo "MySQL está pronto!"
 
       - name: Aplicar schema ao banco de teste
         run: |

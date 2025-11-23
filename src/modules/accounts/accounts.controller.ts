@@ -1,37 +1,43 @@
-import { Controller, Get, Post, Body, Param, Patch, Delete, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
+import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
 
 @Controller('accounts')
 export class AccountsController {
-  constructor(private readonly accountsService: AccountsService) {}
+    constructor(private readonly accountsService: AccountsService) { }
 
-  @Post()
-  create(@Body() createAccountDto: CreateAccountDto) {
-    return this.accountsService.create(createAccountDto);
-  }
+    @Post()
+    @UseGuards(JwtAuthGuard)
+    create(@Body() createAccountDto: CreateAccountDto) {
+        return this.accountsService.create(createAccountDto);
+    }
 
-  @Get()
-  findAll() {
-    return this.accountsService.findAll();
-  }
+    @Get()
+    @UseGuards(JwtAuthGuard)
+    findAll() {
+        return this.accountsService.findAll();
+    }
 
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.accountsService.findOne(id);
-  }
+    @Get(':id')
+    @UseGuards(JwtAuthGuard)
+    findOne(@Param('id', ParseIntPipe) id: number) {
+        return this.accountsService.findOne(id);
+    }
 
-  @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateAccountDto: UpdateAccountDto,
-  ) {
-    return this.accountsService.update(id, updateAccountDto);
-  }
+    @Patch(':id')
+    @UseGuards(JwtAuthGuard)
+    update(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() updateAccountDto: UpdateAccountDto,
+    ) {
+        return this.accountsService.update(id, updateAccountDto);
+    }
 
-  @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.accountsService.remove(id);
-  }
+    @Delete(':id')
+    @UseGuards(JwtAuthGuard)
+    remove(@Param('id', ParseIntPipe) id: number) {
+        return this.accountsService.remove(id);
+    }
 }
