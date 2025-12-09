@@ -2,22 +2,22 @@ import { CardRepositoryPort } from "../ports/card.repository.port";
 import { Card } from "../entities/card.entity";
 import { Inject } from "@nestjs/common";
 
-export class CreateCardUseCase {
+export class UpdateCardUseCase {
     constructor(
         @Inject('CardRepositoryPort')
         private readonly cardRepository: CardRepositoryPort,
     ) { }
 
-    async execute(input: {
+    async execute(id: string, input: {
         name: string;
     }): Promise<Card> {
 
         const card = new Card(
-            crypto.randomUUID(),
+            id,
             input.name,
         );
 
-        await this.cardRepository.create(card);
+        await this.cardRepository.update(id, card);
 
         return card;
     }

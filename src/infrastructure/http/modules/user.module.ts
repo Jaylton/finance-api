@@ -1,6 +1,5 @@
 import { Module } from "@nestjs/common";
 import { UserController } from "../controllers/user.controller";
-import { UserRepositoryPort } from "../../../domain/user/ports/user.repository.port";
 import { UserRepositoryPrisma } from "../../persistence/prisma/user.repository.prisma";
 import { CreateUserUseCase } from "../../../domain/user/services/create-user.usecase";
 import { GetUserUseCase } from "../../../domain/user/services/get-user.usecase";
@@ -15,7 +14,7 @@ import { BcryptPasswordHasher } from "src/infrastructure/security/bcrypt-passwor
         CreateUserUseCase,
         GetUserUseCase,
         {
-            provide: UserRepositoryPort,
+            provide: "UserRepositoryPort",
             useClass: UserRepositoryPrisma,
         },
         {
@@ -23,6 +22,6 @@ import { BcryptPasswordHasher } from "src/infrastructure/security/bcrypt-passwor
             useClass: BcryptPasswordHasher,
         },
     ],
-    exports: [UserRepositoryPort]
+    exports: ["UserRepositoryPort"]
 })
 export class UserModule { }
