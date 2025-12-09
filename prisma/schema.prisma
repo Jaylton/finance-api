@@ -23,7 +23,7 @@ model User {
 }
 
 model Category {
-  id        Int        @id @default(autoincrement())
+  id        String     @id @default(cuid())
   name      String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -31,7 +31,7 @@ model Category {
 }
 
 model Card {
-  id        Int        @id @default(autoincrement())
+  id        String     @id @default(cuid())
   name      String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -39,7 +39,7 @@ model Card {
 }
 
 model Account {
-  id             Int        @id @default(autoincrement())
+  id             String     @id @default(cuid())
   name           String
   init_amount    Float
   current_amount Float
@@ -57,9 +57,9 @@ enum TransferType {
 model Transfer {
   id          Int          @id @default(autoincrement())
   account     Account?     @relation(fields: [accountId], references: [id])
-  accountId   Int?
+  accountId   String?
   card        Card?        @relation(fields: [cardId], references: [id])
-  cardId      Int?
+  cardId      String?
   name        String
   date        DateTime
   type        TransferType
