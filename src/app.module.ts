@@ -5,9 +5,11 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './infrastructure/http/modules/user.module';
 import { CardModule } from './infrastructure/http/modules/card.module';
+import { CategoryModule } from './infrastructure/http/modules/category.module';
+import { AccountsModule } from './modules/accounts/accounts.module';
 
 @Module({
-  imports: [UserModule, PrismaModule, CardModule],
+  imports: [UserModule, PrismaModule, CardModule, CategoryModule, AccountsModule],
   controllers: [AppController],
   providers: [AppService],
 })
