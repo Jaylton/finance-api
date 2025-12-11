@@ -9,7 +9,6 @@ export class GetAllTransfersUseCase {
     ) { }
 
     async execute(query: any): Promise<Transfer[] | null> {
-
         return await this.transferRepository.findAll(query);
     }
 }

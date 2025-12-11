@@ -8,13 +8,22 @@ export class UpdateTransferUseCase {
         private readonly transferRepository: TransferRepositoryPort,
     ) { }
 
-    async execute(id: string, input: {
-        name: string;
-    }): Promise<Transfer> {
+    async execute(id: string, transferData): Promise<Transfer> {
 
         const transfer = new Transfer(
             id,
-            input.name,
+            transferData.name,
+            null,
+            transferData.accountId || null,
+            null,
+            transferData.cardId || null,
+            new Date(transferData.date + "T00:00:00.000Z"),
+            transferData.type,
+            transferData.installment || null,
+            transferData.monthly,
+            transferData.description || null,
+            transferData.amount,
+            transferData.categories
         );
 
         await this.transferRepository.update(id, transfer);

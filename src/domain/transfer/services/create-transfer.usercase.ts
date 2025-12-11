@@ -55,7 +55,7 @@ export class CreateTransferUseCase {
             transferData.monthly,
             transferData.description || null,
             transferData.amount,
-            transferData.categories
+            transferData.categories.map((id: string) => ({ id }))
         );
 
         await this.transferRepository.create(transfer);

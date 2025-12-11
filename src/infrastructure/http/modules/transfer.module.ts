@@ -7,6 +7,9 @@ import { UpdateTransferUseCase } from "src/domain/transfer/services/update-trans
 import { DeleteTransferUseCase } from "src/domain/transfer/services/delete-transfer.usercase";
 import { GetGraphicDataUseCase } from "src/domain/transfer/services/get-graphic-data.usercase";
 import { TransferRepositoryPrisma } from "src/infrastructure/persistence/prisma/transfer.repository.prisma";
+import { CardRepositoryPrisma } from "src/infrastructure/persistence/prisma/card.repository.prisma";
+import { AccountRepositoryPrisma } from "src/infrastructure/persistence/prisma/account.repository.prisma";
+import { ImportCSVUseCase } from "src/domain/transfer/services/import-csv.usercase";
 
 @Module({
     controllers: [TransferController],
@@ -17,9 +20,18 @@ import { TransferRepositoryPrisma } from "src/infrastructure/persistence/prisma/
         UpdateTransferUseCase,
         DeleteTransferUseCase,
         GetGraphicDataUseCase,
+        ImportCSVUseCase,
         {
             provide: 'TransferRepositoryPort',
             useClass: TransferRepositoryPrisma,
+        },
+        {
+            provide: 'CardRepositoryPort',
+            useClass: CardRepositoryPrisma,
+        },
+        {
+            provide: 'AccountRepositoryPort',
+            useClass: AccountRepositoryPrisma,
         },
     ],
     exports: ['TransferRepositoryPort']

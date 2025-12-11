@@ -6,20 +6,43 @@ import { Transfer } from 'src/domain/transfer/entities/transfer.entity';
 import { Prisma } from '@prisma/client';
 import { Category } from 'src/domain/category/entities/category.entity';
 import { GraphicResult } from 'src/domain/transfer/dtos/graphic-result';
+import { convertBigInt } from 'src/commons/utils';
 
 @Injectable()
 export class TransferRepositoryPrisma implements TransferRepositoryPort {
     constructor(private readonly prisma: PrismaService) { }
 
+    private readonly transferInclude = {
+        categories: { select: { id: true, name: true } },
+    };
+
+    private mapPrismaToDomain(t: any): Transfer {
+        return new Transfer(
+            t.id,
+            t.name,
+            null,
+            t.accountId,
+            null,
+            t.cardId,
+            t.date,
+            t.type,
+            t.installment,
+            t.monthly,
+            t.description,
+            t.amount,
+            t.categories.map((c: any) => new Category(c.id, c.name)),
+        );
+    }
+
     async findAll(criteria: TransferSearchCriteria): Promise<Transfer[]> {
 
         let dateFilter: any = undefined;
         if (criteria.startDate && criteria.endDate) {
-            dateFilter = { gte: criteria.startDate, lte: criteria.endDate };
+            dateFilter = { gte: criteria.startDate + "T00:00:00.000Z", lte: criteria.endDate + "T00:00:00.000Z" };
         } else if (criteria.startDate) {
-            dateFilter = { gte: criteria.startDate };
+            dateFilter = { gte: criteria.startDate + "T00:00:00.000Z" };
         } else if (criteria.endDate) {
-            dateFilter = { lte: criteria.endDate };
+            dateFilter = { lte: criteria.endDate + "T00:00:00.000Z" };
         }
 
         const where: Prisma.TransferWhereInput = {
@@ -42,26 +65,11 @@ export class TransferRepositoryPrisma implements TransferRepositoryPort {
 
         const prismaTransfers = await this.prisma.transfer.findMany({
             where,
-            include: {
-                categories: { select: { id: true, name: true } },
-            },
+            orderBy: { date: 'asc' },
+            include: this.transferInclude,
         });
 
-        return prismaTransfers.map(t => new Transfer(
-            t.id,
-            t.name,
-            null,
-            t.accountId,
-            null,
-            t.cardId,
-            t.date,
-            t.type,
-            t.installment,
-            t.monthly,
-            t.description,
-            t.amount,
-            t.categories.map(c => new Category(c.id, c.name)),
-        ));
+        return prismaTransfers.map(t => this.mapPrismaToDomain(t));
     }
 
     async graphic(criteria: TransferSearchCriteria): Promise<GraphicResult[]> {
@@ -129,51 +137,23 @@ export class TransferRepositoryPrisma implements TransferRepositoryPort {
             GROUP BY YEAR(date), MONTH(date)
             ORDER BY ano DESC, mes DESC
         `;
-
-        return this.prisma.$queryRaw`${sql}`;
+        const result = await this.prisma.$queryRaw(sql);
+        return convertBigInt(result);
     }
 
     async findLastByName(name: string): Promise<Transfer | null> {
         const transfers = await this.prisma.transfer.findMany({
             where: {
-                name: {
-                    contains: name,
-                },
-                categories: {
-                    some: {},
-                },
+                name: { contains: name },
+                categories: { some: {} },
             },
-            include: {
-                categories: {
-                    select: {
-                        id: true,
-                        name: true,
-                    },
-                },
-            },
+            include: this.transferInclude,
             orderBy: { id: 'desc' },
         });
 
-        if (transfers.length === 0) {
-            return null;
-        }
+        if (transfers.length === 0) return null;
 
-        const t = transfers[0];
-        return new Transfer(
-            t.id,
-            t.name,
-            null,
-            t.accountId,
-            null,
-            t.cardId,
-            t.date,
-            t.type,
-            t.installment,
-            t.monthly,
-            t.description,
-            t.amount,
-            t.categories.map(c => new Category(c.id, c.name)),
-        );
+        return this.mapPrismaToDomain(transfers[0]);
     }
 
     async findFirstByParams(params: Partial<Transfer>): Promise<Transfer | null> {
@@ -181,37 +161,17 @@ export class TransferRepositoryPrisma implements TransferRepositoryPort {
         const transfer = await this.prisma.transfer.findFirst({
             where: {
                 name: params.name,
-                date: new Date(params.date + "T00:00:00.000Z"),
+                date: params.date,
                 amount: params.amount,
                 accountId: params.accountId,
                 cardId: params.cardId,
             },
-            include: {
-                categories: { select: { id: true, name: true } },
-            },
+            include: this.transferInclude,
         });
 
-        if (!transfer) {
-            return null;
-        }
+        if (!transfer) return null;
 
-        const t = transfer;
-
-        return new Transfer(
-            t.id,
-            t.name,
-            null,
-            t.accountId,
-            null,
-            t.cardId,
-            t.date,
-            t.type,
-            t.installment,
-            t.monthly,
-            t.description,
-            t.amount,
-            t.categories.map(c => new Category(c.id, c.name)),
-        );
+        return this.mapPrismaToDomain(transfer);
     }
 
     async create(transfer: Transfer): Promise<Transfer> {
@@ -219,7 +179,7 @@ export class TransferRepositoryPrisma implements TransferRepositoryPort {
             data: {
                 id: transfer.id,
                 name: transfer.name,
-                date: transfer.date + "T00:00:00.000Z",
+                date: transfer.date,
                 type: transfer.type,
                 amount: transfer.amount,
                 description: transfer.description,
@@ -227,10 +187,41 @@ export class TransferRepositoryPrisma implements TransferRepositoryPort {
                 cardId: transfer.cardId,
                 installment: transfer.installment,
                 monthly: transfer.monthly,
-                categories: {
-                    connect: transfer.categories?.map(c => ({ id: c.id })),
-                },
+                categories: { connect: transfer.categories?.map(c => ({ id: c.id })) },
             },
+            include: this.transferInclude,
+        });
+
+        return this.mapPrismaToDomain(t);
+    }
+
+    async update(id: string, transfer: Transfer): Promise<Transfer | null> {
+        const categories = transfer.categories;
+        
+        // Monta a estrutura base do update
+        const data: any = {
+            id: transfer.id,
+            name: transfer.name,
+            type: transfer.type,
+            amount: transfer.amount,
+            description: transfer.description,
+            accountId: transfer.accountId,
+            cardId: transfer.cardId,
+            installment: transfer.installment,
+            monthly: transfer.monthly,
+            date: transfer.date ? transfer.date : undefined,
+        };
+
+        // Se o usuário enviou categorias no update:
+        if (categories) {
+            data.categories = {
+                set: categories.map(id => ({ id })), // substitui tudo
+            };
+        }
+
+        const t = await this.prisma.transfer.update({
+            where: { id },
+            data,
             include: {
                 categories: {
                     select: {
@@ -240,26 +231,8 @@ export class TransferRepositoryPrisma implements TransferRepositoryPort {
                 },
             },
         });
-
-        return new Transfer(
-            t.id,
-            t.name,
-            null,
-            t.accountId,
-            null,
-            t.cardId,
-            t.date,
-            t.type,
-            t.installment,
-            t.monthly,
-            t.description,
-            t.amount,
-            t.categories.map(c => new Category(c.id, c.name)),
-        );
-    }
-
-    update(id: string, transfer: Transfer): Promise<Transfer | null> {
-        throw new Error('Method not implemented.');
+        
+        return this.mapPrismaToDomain(t);
     }
 
     async delete(id: string): Promise<void> {
