@@ -55,7 +55,7 @@ enum TransferType {
 }
 
 model Transfer {
-  id          Int          @id @default(autoincrement())
+  id          String       @id @default(cuid())
   account     Account?     @relation(fields: [accountId], references: [id])
   accountId   String?
   card        Card?        @relation(fields: [cardId], references: [id])
